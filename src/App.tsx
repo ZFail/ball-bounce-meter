@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AudioRecorder } from '@/components/AudioRecorder';
 import { FileUploader } from '@/components/FileUploader';
@@ -8,22 +8,49 @@ import { HistoryPanel } from '@/components/HistoryPanel';
 import { SensitivityControl } from '@/components/SensitivityControl';
 import { AnalysisResult, AnalysisResultWithBuffer } from '@/types/audio';
 import { Mic, Upload } from 'lucide-react';
+import { getChannelData } from '@/services/audioAnalyzer';
+import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services/peakDetector';
 
 function App() {
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+  const [channelData, setChannelData] = useState<Float32Array | null>(null);
   const [threshold, setThreshold] = useState(0.5);
   const [minDistance, setMinDistance] = useState(0.1);
 
   const handleAnalysisComplete = useCallback((result: AnalysisResultWithBuffer) => {
     setCurrentResult(result);
     setAudioBuffer(result.audioBuffer);
+    setChannelData(getChannelData(result.audioBuffer, 0));
   }, []);
 
   const handleSelectHistoryResult = useCallback((result: AnalysisResult) => {
     setCurrentResult(result);
     setAudioBuffer(null); // Нет буфера для истории
+    setChannelData(null);
   }, []);
+
+  // Пересчитываем пики при изменении настроек
+  useEffect(() => {
+    if (!channelData || !audioBuffer) return;
+
+    const { peaks, intervals, statistics } = detectPeaksAndCalculate(
+      channelData,
+      audioBuffer.sampleRate,
+      threshold,
+      minDistance
+    );
+
+    setCurrentResult(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        peaks: peaks.map(p => p.time),
+        intervals,
+        statistics,
+      };
+    });
+  }, [threshold, minDistance, channelData, audioBuffer]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -92,6 +119,18 @@ function App() {
       </div>
     </div>
   );
+}
+
+function detectPeaksAndCalculate(
+  channelData: Float32Array,
+  sampleRate: number,
+  threshold: number,
+  minDistance: number
+) {
+  const peaks = detectPeaks(channelData, sampleRate, { threshold, minDistance });
+  const intervals = calculateIntervals(peaks);
+  const statistics = calculateStatistics(intervals);
+  return { peaks, intervals, statistics };
 }
 
 export default App;
