@@ -10,6 +10,7 @@ import { AnalysisResult, AnalysisResultWithBuffer } from '@/types/audio';
 import { Mic, Upload } from 'lucide-react';
 import { getChannelData } from '@/services/audioAnalyzer';
 import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services/peakDetector';
+import { generateId } from '@/services/storage';
 
 function App() {
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
@@ -30,7 +31,28 @@ function App() {
     setChannelData(null);
   }, []);
 
-  // Пересчитываем пики при изменении настроек (только если уже есть результат)
+  // Первый запуск анализа когда channelData готов
+  useEffect(() => {
+    if (!channelData || !audioBuffer) return;
+
+    const { peaks, intervals, statistics } = detectPeaksAndCalculate(
+      channelData,
+      audioBuffer.sampleRate,
+      threshold,
+      minDistance
+    );
+
+    setCurrentResult({
+      id: generateId(),
+      timestamp: Date.now(),
+      sourceType: 'file',
+      peaks: peaks.map(p => p.time),
+      intervals,
+      statistics,
+    });
+  }, [channelData, audioBuffer]); // Только channelData и audioBuffer
+
+  // Пересчитываем пики при изменении настроек
   useEffect(() => {
     if (!channelData || !audioBuffer || !currentResult) return;
 
@@ -51,7 +73,7 @@ function App() {
       intervals,
       statistics,
     });
-  }, [threshold, minDistance, channelData, audioBuffer, currentResult]);
+  }, [threshold, minDistance]); // Только threshold и minDistance
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
