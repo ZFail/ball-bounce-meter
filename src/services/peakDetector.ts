@@ -2,7 +2,7 @@
  * Параметры для детекции пиков
  */
 export interface PeakDetectionOptions {
-  threshold?: number;      // Порог чувствительности (0-1)
+  threshold?: number;      // Порог чувствительности (0-1, процент от максимальной амплитуды)
   minDistance?: number;    // Минимальное расстояние между пиками (в секундах)
 }
 
@@ -26,7 +26,7 @@ export function detectPeaks(
   options: PeakDetectionOptions = {}
 ): PeakResult[] {
   const {
-    threshold = 0.3,
+    threshold = 0.5,
     minDistance = 0.1,
   } = options;
 
@@ -45,7 +45,8 @@ export function detectPeaks(
   const windowSize = Math.floor(sampleRate * 0.01); // 10ms окно
   const minDistanceSamples = Math.floor(sampleRate * minDistance);
 
-  // Нормализуем порог относительно максимальной амплитуды
+  // Порог как процент от максимальной амплитуды
+  // threshold = 0.05 означает 5% от максимума, threshold = 0.9 означает 90% от максимума
   const normalizedThreshold = threshold * maxAmplitude;
 
   let localMaxIndex = -1;

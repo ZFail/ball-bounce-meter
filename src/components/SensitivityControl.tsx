@@ -38,6 +38,7 @@ export function SensitivityControl({
             min={0.05}
             max={0.95}
             step={0.05}
+            data-testid="threshold-slider"
           />
           <p className="text-xs text-muted-foreground">
             Меньшее значение = выше чувствительность (больше пиков)
@@ -55,6 +56,7 @@ export function SensitivityControl({
             min={0.05}
             max={2.0}
             step={0.05}
+            data-testid="min-distance-slider"
           />
           <p className="text-xs text-muted-foreground">
             Минимальное время между соседними ударами

@@ -12,7 +12,7 @@ import { Mic, Upload } from 'lucide-react';
 function App() {
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
-  const [threshold, setThreshold] = useState(0.3);
+  const [threshold, setThreshold] = useState(0.5);
   const [minDistance, setMinDistance] = useState(0.1);
 
   const handleAnalysisComplete = useCallback((result: AnalysisResultWithBuffer) => {
