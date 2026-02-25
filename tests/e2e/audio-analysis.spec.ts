@@ -45,4 +45,25 @@ test.describe('Анализ аудио файлов', () => {
     const bounceCountElement = await page.getByTestId('bounce-count');
     await expect(bounceCountElement).toBeVisible();
   });
+
+  test('индикатор загрузки должен исчезнуть после обработки файла', async ({ page }) => {
+    await page.goto('http://localhost:5173');
+    await page.getByRole('tab', { name: /Файл/i }).click();
+    
+    const filePath = path.join(dataDir, 'sound_test1.webm');
+    
+    // Загружаем файл
+    await page.getByTestId('file-input').setInputFiles(filePath);
+    
+    // Ждём что статистика появилась (файл обрабатывается быстро)
+    const bounceCountElement = await page.getByTestId('bounce-count');
+    await expect(bounceCountElement).toBeVisible({ timeout: 10000 });
+    
+    // Проверяем что индикаторы загрузки не видны
+    const uploadingText = page.getByText('Загрузка...');
+    const processingText = page.getByText('Обработка...');
+    
+    await expect(uploadingText).not.toBeVisible({ timeout: 1000 });
+    await expect(processingText).not.toBeVisible({ timeout: 1000 });
+  });
 });

@@ -24,21 +24,21 @@ export function FileUploader({ onAnalysisComplete, threshold, minDistance }: Fil
   const handleFileSelect = useCallback(async (file: File) => {
     setIsUploading(true);
     setFileName(file.name);
-    
+
     try {
       const audioData = await loadAudioFile(file);
       setIsUploading(false);
       setIsProcessing(true);
-      
+
       // Анализируем аудио
       const channelData = getChannelData(audioData.audioBuffer, 0);
       const { peaks, intervals, statistics } = detectPeaksAndCalculate(
-        channelData, 
+        channelData,
         audioData.audioBuffer.sampleRate,
         threshold,
         minDistance
       );
-      
+
       const resultWithBuffer: AnalysisResult & { audioBuffer: AudioBuffer } = {
         id: generateId(),
         timestamp: Date.now(),
@@ -49,17 +49,18 @@ export function FileUploader({ onAnalysisComplete, threshold, minDistance }: Fil
         statistics,
         audioBuffer: audioData.audioBuffer,
       };
-      
+
       // Сохраняем без audioBuffer (localStorage не поддерживает AudioBuffer)
       const { audioBuffer: _, ...result } = resultWithBuffer;
       saveAnalysisResult(result);
       onAnalysisComplete(resultWithBuffer);
     } catch (error) {
       console.error('Error processing file:', error);
+    } finally {
       setIsUploading(false);
       setIsProcessing(false);
     }
-  }, [onAnalysisComplete]);
+  }, [onAnalysisComplete, threshold, minDistance]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
