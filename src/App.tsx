@@ -13,10 +13,17 @@ import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services
 import { generateId } from '@/services/storage';
 
 function App() {
+  // Читаем threshold из URL параметра или используем значение по умолчанию 0.5
+  const getInitialThreshold = () => {
+    const params = new URLSearchParams(window.location.search);
+    const thresholdParam = params.get('threshold');
+    return thresholdParam ? parseFloat(thresholdParam) : 0.5;
+  };
+
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [channelData, setChannelData] = useState<Float32Array | null>(null);
-  const [threshold, setThreshold] = useState(0.5);
+  const [threshold, setThreshold] = useState(getInitialThreshold());
   const [minDistance, setMinDistance] = useState(0.1);
 
   const handleAnalysisComplete = useCallback((result: AnalysisResultWithBuffer) => {

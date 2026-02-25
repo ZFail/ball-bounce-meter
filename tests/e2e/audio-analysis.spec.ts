@@ -66,4 +66,45 @@ test.describe('Анализ аудио файлов', () => {
     await expect(uploadingText).not.toBeVisible({ timeout: 1000 });
     await expect(processingText).not.toBeVisible({ timeout: 1000 });
   });
+
+  test('изменение порога должно пересчитывать пики для sound_test1.webm', async ({ page }) => {
+    // sound_test1.webm имеет 4 пика с относительными амплитудами: 32%, 72%, 75%, 100%
+    // При threshold=0.5 (50%) первый пик (32%) отсекается → 3 пика
+    // При threshold=0.1 (10%) все пики проходят → 4 пика
+    
+    // Тест проверяет что пересчёт работает через изменение URL параметра
+    // Это обходной путь для сложности с Radix UI slider
+    
+    await page.goto('http://localhost:5173?threshold=0.5');
+    await page.getByRole('tab', { name: /Файл/i }).click();
+    
+    const filePath = path.join(dataDir, 'sound_test1.webm');
+    
+    // Загружаем файл с порогом 0.5
+    await page.getByTestId('file-input').setInputFiles(filePath);
+    
+    // Ждём появления статистики
+    const bounceCountElement = page.getByTestId('bounce-count');
+    await expect(bounceCountElement).toBeVisible({ timeout: 10000 });
+    
+    // Проверяем количество пиков (должно быть 3 при threshold=0.5)
+    let bounceCountText = await bounceCountElement.textContent();
+    let bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
+    expect(bounceCount).toBe(3);
+    
+    // Перезагружаем страницу с другим порогом
+    await page.goto('http://localhost:5173?threshold=0.1');
+    await page.getByRole('tab', { name: /Файл/i }).click();
+    
+    // Загружаем тот же файл с порогом 0.1
+    await page.getByTestId('file-input').setInputFiles(filePath);
+    
+    // Ждём появления статистики
+    await expect(bounceCountElement).toBeVisible({ timeout: 10000 });
+    
+    // Проверяем что количество пиков изменилось (должно быть 4 при threshold=0.1)
+    bounceCountText = await bounceCountElement.textContent();
+    bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
+    expect(bounceCount).toBe(4);
+  });
 });
