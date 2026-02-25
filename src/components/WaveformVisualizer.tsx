@@ -35,14 +35,19 @@ export function WaveformVisualizer({
     const samples = audioBuffer.length;
     const step = Math.ceil(samples / width);
     const amp = height / 2;
+    const audioDuration = duration || audioBuffer.duration;
+
+    // Вычисляем зоны пиков (диапазоны x-координат)
+    const peakZones = peaks.map(peakTime => {
+      const x = (peakTime / audioDuration) * width;
+      const zoneWidth = Math.max(3, width / 100); // Минимум 3px, максимум 1% от ширины
+      return { x, zoneWidth };
+    });
 
     // Очищаем canvas
     ctx.clearRect(0, 0, width, height);
 
     // Рисуем waveform
-    ctx.beginPath();
-    ctx.moveTo(0, amp);
-
     for (let i = 0; i < width; i++) {
       let min = 1.0;
       let max = -1.0;
@@ -53,21 +58,16 @@ export function WaveformVisualizer({
         if (datum > max) max = datum;
       }
 
+      // Проверяем, попадает ли этот столбец в зону пика
+      const isPeak = peakZones.some(zone => {
+        const halfWidth = zone.zoneWidth / 2;
+        return i >= zone.x - halfWidth && i <= zone.x + halfWidth;
+      });
+
+      // Рисуем столбец waveform
+      ctx.fillStyle = isPeak ? '#ef4444' : '#94a3b8'; // Красный для пиков, серый для остального
       ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
     }
-
-    // Рисуем пики
-    const audioDuration = duration || audioBuffer.duration;
-    peaks.forEach((peakTime) => {
-      const x = (peakTime / audioDuration) * width;
-      
-      ctx.beginPath();
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    });
 
   }, [audioBuffer, peaks, duration]);
 

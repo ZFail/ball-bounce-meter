@@ -56,7 +56,6 @@ export function FileUploader({ onAnalysisComplete, threshold, minDistance }: Fil
       onAnalysisComplete(resultWithBuffer);
     } catch (error) {
       console.error('Error processing file:', error);
-    } finally {
       setIsUploading(false);
       setIsProcessing(false);
     }

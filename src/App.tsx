@@ -26,13 +26,13 @@ function App() {
 
   const handleSelectHistoryResult = useCallback((result: AnalysisResult) => {
     setCurrentResult(result);
-    setAudioBuffer(null); // Нет буфера для истории
+    setAudioBuffer(null);
     setChannelData(null);
   }, []);
 
-  // Пересчитываем пики при изменении настроек
+  // Пересчитываем пики при изменении настроек (только если уже есть результат)
   useEffect(() => {
-    if (!channelData || !audioBuffer) return;
+    if (!channelData || !audioBuffer || !currentResult) return;
 
     const { peaks, intervals, statistics } = detectPeaksAndCalculate(
       channelData,
@@ -41,16 +41,17 @@ function App() {
       minDistance
     );
 
-    setCurrentResult(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        peaks: peaks.map(p => p.time),
-        intervals,
-        statistics,
-      };
+    // Обновляем только если пики изменились
+    const peaksChanged = JSON.stringify(peaks.map(p => p.time)) !== JSON.stringify(currentResult.peaks);
+    if (!peaksChanged) return;
+
+    setCurrentResult({
+      ...currentResult,
+      peaks: peaks.map(p => p.time),
+      intervals,
+      statistics,
     });
-  }, [threshold, minDistance, channelData, audioBuffer]);
+  }, [threshold, minDistance, channelData, audioBuffer, currentResult]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
