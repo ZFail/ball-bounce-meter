@@ -10,4 +10,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  test: {
+    environment: 'happy-dom',
+    include: ['tests/unit/**/*.test.ts'],
+  },
 })

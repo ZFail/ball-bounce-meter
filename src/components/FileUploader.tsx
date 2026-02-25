@@ -102,6 +102,7 @@ export function FileUploader({ onAnalysisComplete, threshold, minDistance }: Fil
             accept={ACCEPTED_FORMATS.join(',')}
             onChange={handleInputChange}
             className="hidden"
+            data-testid="file-input"
           />
           
           {isUploading || isProcessing ? (

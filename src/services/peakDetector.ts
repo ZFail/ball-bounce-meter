@@ -31,16 +31,29 @@ export function detectPeaks(
   } = options;
 
   const peaks: PeakResult[] = [];
-  
-  // Вычисляем RMS (root mean square) для каждого семпла в окне
+
+  // Находим максимальную амплитуду для нормализации порога
+  let maxAmplitude = 0;
+  for (let i = 0; i < channelData.length; i++) {
+    const absValue = Math.abs(channelData[i]);
+    if (absValue > maxAmplitude) {
+      maxAmplitude = absValue;
+    }
+  }
+
+  // Вычисляем локальные максимумы в окне
   const windowSize = Math.floor(sampleRate * 0.01); // 10ms окно
-  
+  const minDistanceSamples = Math.floor(sampleRate * minDistance);
+
+  // Нормализуем порог относительно максимальной амплитуды
+  const normalizedThreshold = threshold * maxAmplitude;
+
   let localMaxIndex = -1;
   let localMaxValue = 0;
 
   for (let i = 0; i < channelData.length; i++) {
     const absValue = Math.abs(channelData[i]);
-    
+
     // Ищем локальный максимум
     if (absValue > localMaxValue) {
       localMaxValue = absValue;
@@ -50,20 +63,20 @@ export function detectPeaks(
     // Проверяем, является ли текущий максимум пиком
     if (i - localMaxIndex > windowSize && localMaxIndex >= 0) {
       // Проверяем порог и расстояние от предыдущего пика
-      if (localMaxValue > threshold) {
+      if (localMaxValue > normalizedThreshold) {
         const lastPeak = peaks[peaks.length - 1];
-        const timeSinceLastPeak = lastPeak 
-          ? (localMaxIndex / sampleRate) - lastPeak.time 
+        const distanceFromLastPeak = lastPeak
+          ? localMaxIndex - Math.floor(lastPeak.time * sampleRate)
           : Infinity;
 
-        if (timeSinceLastPeak >= minDistance) {
+        if (distanceFromLastPeak >= minDistanceSamples) {
           peaks.push({
             time: localMaxIndex / sampleRate,
             amplitude: localMaxValue,
           });
         }
       }
-      
+
       // Сбрасываем для поиска следующего пика
       localMaxIndex = -1;
       localMaxValue = 0;
@@ -71,13 +84,13 @@ export function detectPeaks(
   }
 
   // Проверяем последний найденный максимум
-  if (localMaxIndex >= 0 && localMaxValue > threshold) {
+  if (localMaxIndex >= 0 && localMaxValue > normalizedThreshold) {
     const lastPeak = peaks[peaks.length - 1];
-    const timeSinceLastPeak = lastPeak 
-      ? (localMaxIndex / sampleRate) - lastPeak.time 
+    const distanceFromLastPeak = lastPeak
+      ? localMaxIndex - Math.floor(lastPeak.time * sampleRate)
       : Infinity;
 
-    if (timeSinceLastPeak >= minDistance) {
+    if (distanceFromLastPeak >= minDistanceSamples) {
       peaks.push({
         time: localMaxIndex / sampleRate,
         amplitude: localMaxValue,

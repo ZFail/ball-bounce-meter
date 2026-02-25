@@ -38,25 +38,30 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard 
-            label="Ударов" 
-            value={statistics.bounceCount.toString()} 
+          <StatCard
+            label="Ударов"
+            value={statistics.bounceCount.toString()}
+            dataTestId="bounce-count"
           />
-          <StatCard 
-            label="Средний (сек)" 
-            value={statistics.average.toFixed(3)} 
+          <StatCard
+            label="Средний (сек)"
+            value={statistics.average.toFixed(3)}
+            dataTestId="average-interval"
           />
-          <StatCard 
-            label="Мин (сек)" 
-            value={statistics.min.toFixed(3)} 
+          <StatCard
+            label="Мин (сек)"
+            value={statistics.min.toFixed(3)}
+            dataTestId="min-interval"
           />
-          <StatCard 
-            label="Макс (сек)" 
-            value={statistics.max.toFixed(3)} 
+          <StatCard
+            label="Макс (сек)"
+            value={statistics.max.toFixed(3)}
+            dataTestId="max-interval"
           />
-          <StatCard 
-            label="Отклонение" 
-            value={statistics.stdDev.toFixed(3)} 
+          <StatCard
+            label="Отклонение"
+            value={statistics.stdDev.toFixed(3)}
+            dataTestId="std-dev"
           />
         </div>
 
@@ -91,11 +96,12 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
 interface StatCardProps {
   label: string;
   value: string;
+  dataTestId?: string;
 }
 
-function StatCard({ label, value }: StatCardProps) {
+function StatCard({ label, value, dataTestId }: StatCardProps) {
   return (
-    <div className="bg-muted rounded-lg p-4 text-center">
+    <div className="bg-muted rounded-lg p-4 text-center" data-testid={dataTestId}>
       <div className="text-2xl font-bold">{value}</div>
       <div className="text-xs text-muted-foreground mt-1">{label}</div>
     </div>

@@ -49,7 +49,7 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" data-testid="history-title">
             <History className="h-5 w-5" />
             История
           </CardTitle>
@@ -67,7 +67,7 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" data-testid="history-title">
             <History className="h-5 w-5" />
             История
           </CardTitle>

@@ -48,7 +48,7 @@ test('отображение панели статистики', async ({ page }
 
 test('отображение панели истории', async ({ page }) => {
   await page.goto('/');
-  
-  // Проверяем наличие панели истории
-  await expect(page.getByText('История')).toBeVisible();
+
+  // Проверяем наличие панели истории (заголовок)
+  await expect(page.getByTestId('history-title')).toBeVisible();
 });
