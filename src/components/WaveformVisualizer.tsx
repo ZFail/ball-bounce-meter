@@ -78,8 +78,18 @@ export function WaveformVisualizer({
     const channelData = audioBuffer.getChannelData(0);
     const samples = audioBuffer.length;
     const step = Math.ceil(samples / width);
-    const amp = height / 2;
     const audioDuration = duration || audioBuffer.duration;
+
+    // Находим максимальное значение для нормализации
+    let maxAmplitude = 0;
+    for (let i = 0; i < samples; i++) {
+      const abs = Math.abs(channelData[i]);
+      if (abs > maxAmplitude) maxAmplitude = abs;
+    }
+    
+    // Используем минимум 0.01 чтобы избежать деления на ноль
+    const normalizationFactor = Math.max(maxAmplitude, 0.01);
+    const amp = height / 2;
 
     // Вычисляем зоны пиков (диапазоны x-координат)
     const peakZones = peaks.map(peakTime => {
@@ -98,6 +108,10 @@ export function WaveformVisualizer({
         if (datum < min) min = datum;
         if (datum > max) max = datum;
       }
+
+      // Нормализуем значения относительно максимальной амплитуды
+      const normalizedMin = min / normalizationFactor;
+      const normalizedMax = max / normalizationFactor;
 
       // Проверяем, попадает ли этот столбец в зону пика
       const peakIndex = peakZones.findIndex(zone => {
@@ -119,7 +133,7 @@ export function WaveformVisualizer({
         // Обычный waveform - серый
         ctx.fillStyle = '#94a3b8';
       }
-      ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+      ctx.fillRect(i, (1 + normalizedMin) * amp, 1, Math.max(1, (normalizedMax - normalizedMin) * amp));
     }
 
   }, [audioBuffer, peaks, duration, enabledPeaks]);
