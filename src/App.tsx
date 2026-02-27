@@ -301,22 +301,18 @@ function App() {
             />
           </div>
           <div className="md:col-span-2">
-            <StatisticsPanel result={currentResult} />
-          </div>
-          <div className="md:col-span-2">
-            <HistoryPanel onSelectResult={handleSelectHistoryResult} />
-          </div>
-        </div>
-
-        {/* Настройки детекции — внизу */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
             <SensitivityControl
               threshold={threshold}
               minDistance={minDistance}
               onThresholdChange={setThreshold}
               onMinDistanceChange={setMinDistance}
             />
+          </div>
+          <div className="md:col-span-2">
+            <StatisticsPanel result={currentResult} />
+          </div>
+          <div className="md:col-span-2">
+            <HistoryPanel onSelectResult={handleSelectHistoryResult} />
           </div>
         </div>
       </div>
