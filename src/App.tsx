@@ -1,16 +1,14 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AudioRecorder } from '@/components/AudioRecorder';
-import { FileUploader } from '@/components/FileUploader';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { WaveformVisualizer } from '@/components/WaveformVisualizer';
 import { StatisticsPanel } from '@/components/StatisticsPanel';
 import { HistoryPanel } from '@/components/HistoryPanel';
 import { SensitivityControl } from '@/components/SensitivityControl';
+import { Button } from '@/components/ui/button';
 import { AnalysisResult, AnalysisResultWithBuffer } from '@/types/audio';
-import { Mic, Upload } from 'lucide-react';
-import { getChannelData } from '@/services/audioAnalyzer';
+import { Mic, Upload, Square } from 'lucide-react';
+import { getChannelData, decodeAudioData } from '@/services/audioAnalyzer';
 import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services/peakDetector';
-import { generateId } from '@/services/storage';
+import { generateId, saveAnalysisResult } from '@/services/storage';
 
 function App() {
   // Читаем threshold из URL параметра или используем значение по умолчанию 0.5
@@ -25,6 +23,12 @@ function App() {
   const [channelData, setChannelData] = useState<Float32Array | null>(null);
   const [threshold, setThreshold] = useState(getInitialThreshold());
   const [minDistance, setMinDistance] = useState(0.1);
+  
+  // Состояние для записи с микрофона
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAnalysisComplete = useCallback((result: AnalysisResultWithBuffer) => {
     setCurrentResult(result);
@@ -36,6 +40,111 @@ function App() {
     setCurrentResult(result);
     setAudioBuffer(null);
     setChannelData(null);
+  }, []);
+
+  // Обработка файла (из drag-and-drop или кнопки)
+  const handleFileSelect = useCallback(async (file: File) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await decodeAudioData(arrayBuffer);
+      
+      const sourceType: 'file' | 'webm' = file.name.toLowerCase().endsWith('.webm') ? 'webm' : 'file';
+      
+      const channelData = getChannelData(audioBuffer, 0);
+      const { peaks, intervals, statistics } = detectPeaksAndCalculate(
+        channelData,
+        audioBuffer.sampleRate,
+        threshold,
+        minDistance
+      );
+
+      const resultWithBuffer: AnalysisResult & { audioBuffer: AudioBuffer } = {
+        id: generateId(),
+        timestamp: Date.now(),
+        sourceType,
+        fileName: file.name,
+        peaks: peaks.map(p => p.time),
+        intervals,
+        statistics,
+        audioBuffer,
+      };
+
+      const { audioBuffer: _, ...result } = resultWithBuffer;
+      saveAnalysisResult(result);
+      handleAnalysisComplete(resultWithBuffer);
+    } catch (error) {
+      console.error('Error processing file:', error);
+    }
+  }, [threshold, minDistance, handleAnalysisComplete]);
+
+  // Запись с микрофона
+  const handleStartRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const arrayBuffer = await blob.arrayBuffer();
+        
+        try {
+          const audioBuffer = await decodeAudioData(arrayBuffer);
+          const channelData = getChannelData(audioBuffer, 0);
+          const { peaks, intervals, statistics } = detectPeaksAndCalculate(
+            channelData,
+            audioBuffer.sampleRate,
+            threshold,
+            minDistance
+          );
+
+          const resultWithBuffer: AnalysisResult & { audioBuffer: AudioBuffer } = {
+            id: generateId(),
+            timestamp: Date.now(),
+            sourceType: 'mic',
+            peaks: peaks.map(p => p.time),
+            intervals,
+            statistics,
+            audioBuffer,
+          };
+
+          const { audioBuffer: _, ...result } = resultWithBuffer;
+          saveAnalysisResult(result);
+          handleAnalysisComplete(resultWithBuffer);
+        } catch (error) {
+          console.error('Error processing audio:', error);
+        } finally {
+          setIsRecording(false);
+          setRecordingTime(0);
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      const startTime = Date.now();
+      const timer = setInterval(() => {
+        setRecordingTime((Date.now() - startTime) / 1000);
+      }, 100);
+
+      (mediaRecorder as any).timer = timer;
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setIsRecording(false);
+    }
+  }, [threshold, minDistance, handleAnalysisComplete]);
+
+  const handleStopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      const timer = (mediaRecorderRef.current as any).timer;
+      if (timer) clearInterval(timer);
+    }
   }, []);
 
   // Первый запуск анализа когда channelData готов
@@ -57,7 +166,7 @@ function App() {
       intervals,
       statistics,
     });
-  }, [channelData, audioBuffer]); // Только channelData и audioBuffer
+  }, [channelData, audioBuffer]);
 
   // Пересчитываем пики при изменении настроек
   useEffect(() => {
@@ -70,7 +179,6 @@ function App() {
       minDistance
     );
 
-    // Обновляем только если пики изменились
     const peaksChanged = JSON.stringify(peaks.map(p => p.time)) !== JSON.stringify(currentResult.peaks);
     if (!peaksChanged) return;
 
@@ -80,7 +188,7 @@ function App() {
       intervals,
       statistics,
     });
-  }, [threshold, minDistance]); // Только threshold и minDistance
+  }, [threshold, minDistance]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -92,6 +200,66 @@ function App() {
           </p>
         </header>
 
+        {/* Кнопки управления */}
+        <div className="flex justify-center gap-4">
+          <Button
+            onClick={isRecording ? handleStopRecording : handleStartRecording}
+            variant={isRecording ? 'destructive' : 'default'}
+            className="gap-2"
+          >
+            {isRecording ? (
+              <>
+                <Square className="h-4 w-4" />
+                Остановить запись
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4" />
+                Запись с микрофона
+              </>
+            )}
+          </Button>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*,video/webm"
+            onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+            className="hidden"
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            variant="outline"
+            className="gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Выбрать файл
+          </Button>
+        </div>
+
+        {isRecording && (
+          <div className="text-center text-sm text-muted-foreground">
+            Запись: {recordingTime.toFixed(1)} сек
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <WaveformVisualizer
+              audioBuffer={audioBuffer}
+              peaks={currentResult?.peaks}
+              onFileSelect={handleFileSelect}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <StatisticsPanel result={currentResult} />
+          </div>
+          <div className="md:col-span-2">
+            <HistoryPanel onSelectResult={handleSelectHistoryResult} />
+          </div>
+        </div>
+
+        {/* Настройки детекции — внизу */}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <SensitivityControl
@@ -100,50 +268,6 @@ function App() {
               onThresholdChange={setThreshold}
               onMinDistanceChange={setMinDistance}
             />
-          </div>
-        </div>
-
-        <Tabs defaultValue="mic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="mic" className="gap-2">
-              <Mic className="h-4 w-4" />
-              Микрофон
-            </TabsTrigger>
-            <TabsTrigger value="file" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Файл
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="mic" className="space-y-4">
-            <AudioRecorder 
-              onAnalysisComplete={handleAnalysisComplete}
-              threshold={threshold}
-              minDistance={minDistance}
-            />
-          </TabsContent>
-          
-          <TabsContent value="file" className="space-y-4">
-            <FileUploader 
-              onAnalysisComplete={handleAnalysisComplete}
-              threshold={threshold}
-              minDistance={minDistance}
-            />
-          </TabsContent>
-        </Tabs>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <WaveformVisualizer 
-              audioBuffer={audioBuffer} 
-              peaks={currentResult?.peaks}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <StatisticsPanel result={currentResult} />
-          </div>
-          <div className="md:col-span-2">
-            <HistoryPanel onSelectResult={handleSelectHistoryResult} />
           </div>
         </div>
       </div>
