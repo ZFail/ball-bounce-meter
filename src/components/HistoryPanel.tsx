@@ -6,24 +6,36 @@ import { AnalysisResult } from '@/types/audio';
 import { getAnalysisHistory, deleteAnalysisResult, clearAnalysisHistory } from '@/services/storage';
 import { useState, useEffect } from 'react';
 
-interface HistoryPanelProps {
-}
+// Кастомное событие для обновления истории
+const HISTORY_UPDATE_EVENT = 'history-update';
 
-export function HistoryPanel({ }: HistoryPanelProps) {
+export function HistoryPanel() {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
 
-  useEffect(() => {
+  const loadHistory = () => {
     setHistory(getAnalysisHistory());
+  };
+
+  useEffect(() => {
+    loadHistory();
+    
+    // Подписываемся на событие обновления истории
+    const handleUpdate = () => loadHistory();
+    window.addEventListener(HISTORY_UPDATE_EVENT, handleUpdate);
+    
+    return () => {
+      window.removeEventListener(HISTORY_UPDATE_EVENT, handleUpdate);
+    };
   }, []);
 
   const handleDelete = (id: string) => {
     deleteAnalysisResult(id);
-    setHistory(getAnalysisHistory());
+    loadHistory();
   };
 
   const handleClearAll = () => {
     clearAnalysisHistory();
-    setHistory([]);
+    loadHistory();
   };
 
   const formatDateTime = (timestamp: number) => {

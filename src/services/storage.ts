@@ -8,16 +8,19 @@ const MAX_HISTORY = 10;
  */
 export function saveAnalysisResult(result: AnalysisResult): void {
   const history = getAnalysisHistory();
-  
+
   // Добавляем новый результат в начало
   history.unshift(result);
-  
+
   // Ограничиваем количество записей
   if (history.length > MAX_HISTORY) {
     history.splice(MAX_HISTORY);
   }
-  
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  
+  // Отправляем событие для обновления UI
+  window.dispatchEvent(new CustomEvent('history-update'));
 }
 
 /**
