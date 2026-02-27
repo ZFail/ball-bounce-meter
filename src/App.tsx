@@ -28,6 +28,7 @@ function App() {
   // Состояние для записи с микрофона
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,6 +90,9 @@ function App() {
 
   // Запись с микрофона
   const handleStartRecording = useCallback(async () => {
+    // Очищаем предыдущую запись при начале новой
+    setRecordedBlob(null);
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -96,12 +100,14 @@ function App() {
 
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-
+      
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        const arrayBuffer = await blob.arrayBuffer();
+        setRecordedBlob(blob);
         
+        // Обрабатываем аудио для визуализации
         try {
+          const arrayBuffer = await blob.arrayBuffer();
           const audioBuffer = await decodeAudioData(arrayBuffer);
           const channelData = getChannelData(audioBuffer, 0);
           const { peaks, intervals, statistics } = detectPeaksAndCalculate(
@@ -122,12 +128,12 @@ function App() {
           };
 
           const { audioBuffer: _, ...result } = resultWithBuffer;
-          
+
           // Сохраняем в историю только если есть интервалы (минимум 2 пика)
           if (intervals.length > 0) {
             saveAnalysisResult(result);
           }
-          
+
           handleAnalysisComplete(resultWithBuffer);
         } catch (error) {
           console.error('Error processing audio:', error);
@@ -160,6 +166,17 @@ function App() {
       const timer = (mediaRecorderRef.current as any).timer;
       if (timer) clearInterval(timer);
     }
+    // Не очищаем recordedBlob здесь - он очистится при начале новой записи
+  }, []);
+
+  // Очистка Blob URL при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      if (recordedBlob) {
+        // Браузер сам очистит blob URL при размонтировании
+        // Явная очистка не требуется
+      }
+    };
   }, []);
 
   // Пересчитываем пики при изменении threshold/minDistance
@@ -259,7 +276,7 @@ function App() {
         </header>
 
         {/* Кнопки управления */}
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-4 flex-wrap">
           <Button
             onClick={isRecording ? handleStopRecording : handleStartRecording}
             variant={isRecording ? 'destructive' : 'default'}
@@ -277,7 +294,29 @@ function App() {
               </>
             )}
           </Button>
-          
+
+          {/* Кнопка скачивания записи */}
+          {recordedBlob && (
+            <div className="flex items-center gap-2">
+              <Button
+                asChild
+                variant="outline"
+              >
+                <a
+                  href={URL.createObjectURL(recordedBlob)}
+                  download={`recording-${Date.now()}.webm`}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Скачать запись
+                </a>
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                ({(recordedBlob.size / 1024).toFixed(1)} KB)
+              </span>
+            </div>
+          )}
+
           <input
             ref={fileInputRef}
             type="file"
