@@ -23,6 +23,7 @@ function App() {
   const [channelData, setChannelData] = useState<Float32Array | null>(null);
   const [threshold, setThreshold] = useState(getInitialThreshold());
   const [minDistance, setMinDistance] = useState(0.1);
+  const [enabledPeaks, setEnabledPeaks] = useState<boolean[]>([]);
   
   // Состояние для записи с микрофона
   const [isRecording, setIsRecording] = useState(false);
@@ -34,12 +35,23 @@ function App() {
     setCurrentResult(result);
     setAudioBuffer(result.audioBuffer);
     setChannelData(getChannelData(result.audioBuffer, 0));
+    // Все пики включены по умолчанию
+    setEnabledPeaks(new Array(result.peaks.length).fill(true));
   }, []);
 
   const handleSelectHistoryResult = useCallback((result: AnalysisResult) => {
     setCurrentResult(result);
     setAudioBuffer(null);
     setChannelData(null);
+    setEnabledPeaks(new Array(result.peaks.length).fill(true));
+  }, []);
+
+  const handlePeakToggle = useCallback((index: number, enabled: boolean) => {
+    setEnabledPeaks(prev => {
+      const next = [...prev];
+      next[index] = enabled;
+      return next;
+    });
   }, []);
 
   // Обработка файла (из drag-and-drop или кнопки)
@@ -147,7 +159,7 @@ function App() {
     }
   }, []);
 
-  // Первый запуск анализа когда channelData готов
+  // Пересчитываем пики при изменении threshold/minDistance
   useEffect(() => {
     if (!channelData || !audioBuffer) return;
 
@@ -158,37 +170,72 @@ function App() {
       minDistance
     );
 
+    const peaksChanged = JSON.stringify(peaks.map(p => p.time)) !== JSON.stringify(currentResult?.peaks || []);
+    if (!peaksChanged) return;
+
+    // Сбрасываем enabledPeaks для новых пиков
+    setEnabledPeaks(new Array(peaks.length).fill(true));
+
     setCurrentResult({
-      id: generateId(),
-      timestamp: Date.now(),
-      sourceType: 'file',
+      id: currentResult?.id || generateId(),
+      timestamp: currentResult?.timestamp || Date.now(),
+      sourceType: currentResult?.sourceType || 'file',
       peaks: peaks.map(p => p.time),
       intervals,
       statistics,
     });
-  }, [channelData, audioBuffer]);
+  }, [threshold, minDistance, channelData, audioBuffer]);
 
-  // Пересчитываем пики при изменении настроек
+  // Пересчитываем статистику при изменении enabledPeaks
   useEffect(() => {
-    if (!channelData || !audioBuffer || !currentResult) return;
+    if (!currentResult || !enabledPeaks.length) return;
 
-    const { peaks, intervals, statistics } = detectPeaksAndCalculate(
-      channelData,
-      audioBuffer.sampleRate,
-      threshold,
-      minDistance
-    );
+    // Фильтруем пики по enabledPeaks
+    const filteredPeaks = currentResult.peaks.filter((_, index) => enabledPeaks[index]);
 
-    const peaksChanged = JSON.stringify(peaks.map(p => p.time)) !== JSON.stringify(currentResult.peaks);
-    if (!peaksChanged) return;
+    if (filteredPeaks.length < 2) {
+      // Недостаточно пиков для статистики
+      setCurrentResult({
+        ...currentResult,
+        intervals: [],
+        statistics: {
+          average: 0,
+          min: 0,
+          max: 0,
+          stdDev: 0,
+          bounceCount: filteredPeaks.length,
+        },
+      });
+      return;
+    }
+
+    // Вычисляем интервалы между включёнными пиками
+    const intervals: number[] = [];
+    for (let i = 1; i < filteredPeaks.length; i++) {
+      intervals.push(filteredPeaks[i] - filteredPeaks[i - 1]);
+    }
+
+    // Вычисляем статистику
+    const sum = intervals.reduce((a, b) => a + b, 0);
+    const average = sum / intervals.length;
+    const min = Math.min(...intervals);
+    const max = Math.max(...intervals);
+    const squaredDiffs = intervals.map(interval => Math.pow(interval - average, 2));
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / intervals.length;
+    const stdDev = Math.sqrt(variance);
 
     setCurrentResult({
       ...currentResult,
-      peaks: peaks.map(p => p.time),
       intervals,
-      statistics,
+      statistics: {
+        average,
+        min,
+        max,
+        stdDev,
+        bounceCount: filteredPeaks.length,
+      },
     });
-  }, [threshold, minDistance]);
+  }, [enabledPeaks]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -249,6 +296,8 @@ function App() {
               audioBuffer={audioBuffer}
               peaks={currentResult?.peaks}
               onFileSelect={handleFileSelect}
+              enabledPeaks={enabledPeaks}
+              onPeakToggle={handlePeakToggle}
             />
           </div>
           <div className="md:col-span-2">

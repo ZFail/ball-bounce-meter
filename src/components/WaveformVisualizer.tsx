@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Activity, Upload } from 'lucide-react';
 
 interface WaveformVisualizerProps {
@@ -7,13 +8,17 @@ interface WaveformVisualizerProps {
   peaks?: number[];  // Временные метки пиков в секундах
   duration?: number; // Длительность в секундах
   onFileSelect?: (file: File) => void;
+  enabledPeaks?: boolean[];
+  onPeakToggle?: (index: number, enabled: boolean) => void;
 }
 
 export function WaveformVisualizer({
   audioBuffer,
   peaks = [],
   duration,
-  onFileSelect
+  onFileSelect,
+  enabledPeaks = [],
+  onPeakToggle
 }: WaveformVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,17 +100,29 @@ export function WaveformVisualizer({
       }
 
       // Проверяем, попадает ли этот столбец в зону пика
-      const isPeak = peakZones.some(zone => {
+      const peakIndex = peakZones.findIndex(zone => {
         const halfWidth = zone.zoneWidth / 2;
         return i >= zone.x - halfWidth && i <= zone.x + halfWidth;
       });
 
+      const isPeak = peakIndex >= 0;
+      const isPeakEnabled = isPeak && enabledPeaks[peakIndex] !== false;
+
       // Рисуем столбец waveform
-      ctx.fillStyle = isPeak ? '#ef4444' : '#94a3b8'; // Красный для пиков, серый для остального
+      if (isPeak && !isPeakEnabled) {
+        // Отключенный пик - серый
+        ctx.fillStyle = '#64748b';
+      } else if (isPeak) {
+        // Включенный пик - красный
+        ctx.fillStyle = '#ef4444';
+      } else {
+        // Обычный waveform - серый
+        ctx.fillStyle = '#94a3b8';
+      }
       ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
     }
 
-  }, [audioBuffer, peaks, duration]);
+  }, [audioBuffer, peaks, duration, enabledPeaks]);
 
   useEffect(() => {
     drawWaveform();
@@ -157,9 +174,27 @@ export function WaveformVisualizer({
           )}
           <canvas ref={canvasRef} className="w-full h-full" />
         </div>
-        {peaks.length > 0 && (
-          <div className="mt-2 text-sm text-muted-foreground text-center">
-            Найдено ударов: {peaks.length}
+
+        {/* Галочки для включения/отключения пиков - позиционируются под каждым пиком */}
+        {peaks.length > 0 && onPeakToggle && (
+          <div className="relative h-8 mt-2">
+            {peaks.map((peakTime, index) => {
+              const position = (peakTime / (duration || audioBuffer?.duration || 1)) * 100;
+              return (
+                <div
+                  key={index}
+                  className="absolute transform -translate-x-1/2"
+                  style={{ left: `${position}%` }}
+                >
+                  <Checkbox
+                    id={`peak-${index}`}
+                    checked={enabledPeaks[index] !== false}
+                    onCheckedChange={(checked: boolean | 'indeterminate') => onPeakToggle(index, checked === true)}
+                    className="h-4 w-4"
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>
