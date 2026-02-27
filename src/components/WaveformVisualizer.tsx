@@ -5,8 +5,8 @@ import { Activity, Upload } from 'lucide-react';
 
 interface WaveformVisualizerProps {
   audioBuffer: AudioBuffer | null;
-  peaks?: number[];  // Временные метки пиков в секундах
-  duration?: number; // Длительность в секундах
+  peaks?: number[];  // Peak times in seconds
+  duration?: number; // Duration in seconds
   onFileSelect?: (file: File) => void;
   enabledPeaks?: boolean[];
   onPeakToggle?: (index: number, enabled: boolean) => void;
@@ -62,7 +62,7 @@ export function WaveformVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Устанавливаем размеры canvas
+    // Set canvas dimensions
     const rect = container.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
@@ -70,7 +70,7 @@ export function WaveformVisualizer({
     const width = canvas.width;
     const height = canvas.height;
 
-    // Очищаем canvas
+    // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
     if (!audioBuffer) return;
@@ -80,25 +80,25 @@ export function WaveformVisualizer({
     const step = Math.ceil(samples / width);
     const audioDuration = duration || audioBuffer.duration;
 
-    // Находим максимальное значение для нормализации
+    // Find maximum amplitude for normalization
     let maxAmplitude = 0;
     for (let i = 0; i < samples; i++) {
       const abs = Math.abs(channelData[i]);
       if (abs > maxAmplitude) maxAmplitude = abs;
     }
     
-    // Используем минимум 0.01 чтобы избежать деления на ноль
+    // Use minimum 0.01 to avoid division by zero
     const normalizationFactor = Math.max(maxAmplitude, 0.01);
     const amp = height / 2;
 
-    // Вычисляем зоны пиков (диапазоны x-координат)
+    // Calculate peak zones (x-coordinate ranges)
     const peakZones = peaks.map(peakTime => {
       const x = (peakTime / audioDuration) * width;
-      const zoneWidth = Math.max(3, width / 100); // Минимум 3px, максимум 1% от ширины
+      const zoneWidth = Math.max(3, width / 100); // Minimum 3px, maximum 1% of width
       return { x, zoneWidth };
     });
 
-    // Рисуем waveform
+    // Draw waveform
     for (let i = 0; i < width; i++) {
       let min = 1.0;
       let max = -1.0;
@@ -109,11 +109,11 @@ export function WaveformVisualizer({
         if (datum > max) max = datum;
       }
 
-      // Нормализуем значения относительно максимальной амплитуды
+      // Normalize values relative to maximum amplitude
       const normalizedMin = min / normalizationFactor;
       const normalizedMax = max / normalizationFactor;
 
-      // Проверяем, попадает ли этот столбец в зону пика
+      // Check if this column is in a peak zone
       const peakIndex = peakZones.findIndex(zone => {
         const halfWidth = zone.zoneWidth / 2;
         return i >= zone.x - halfWidth && i <= zone.x + halfWidth;
@@ -122,15 +122,15 @@ export function WaveformVisualizer({
       const isPeak = peakIndex >= 0;
       const isPeakEnabled = isPeak && enabledPeaks[peakIndex] !== false;
 
-      // Рисуем столбец waveform
+      // Draw waveform column
       if (isPeak && !isPeakEnabled) {
-        // Отключенный пик - серый
+        // Disabled peak - gray
         ctx.fillStyle = '#64748b';
       } else if (isPeak) {
-        // Включенный пик - красный
+        // Enabled peak - red
         ctx.fillStyle = '#ef4444';
       } else {
-        // Обычный waveform - серый
+        // Normal waveform - gray
         ctx.fillStyle = '#94a3b8';
       }
       ctx.fillRect(i, (1 + normalizedMin) * amp, 1, Math.max(1, (normalizedMax - normalizedMin) * amp));
@@ -141,7 +141,7 @@ export function WaveformVisualizer({
   useEffect(() => {
     drawWaveform();
 
-    // Перерисовываем при изменении размера окна
+    // Redraw on window resize
     const handleResize = () => drawWaveform();
     window.addEventListener('resize', handleResize);
 
@@ -153,7 +153,7 @@ export function WaveformVisualizer({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5" />
-          Визуализация
+          Waveform
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -170,7 +170,7 @@ export function WaveformVisualizer({
               <div className="text-center text-muted-foreground">
                 <Upload className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">
-                  Перетащите аудиофайл сюда
+                  Drop audio file here
                 </p>
                 <p className="text-xs mt-1">
                   MP3, WAV, OGG, WebM
@@ -182,14 +182,14 @@ export function WaveformVisualizer({
             <div className="absolute inset-0 bg-primary/10 border-2 border-primary border-dashed rounded-lg flex items-center justify-center z-10">
               <div className="text-center text-primary font-medium">
                 <Upload className="h-12 w-12 mx-auto mb-2" />
-                <p>Отпустите файл для загрузки</p>
+                <p>Drop file to upload</p>
               </div>
             </div>
           )}
           <canvas ref={canvasRef} className="w-full h-full" />
         </div>
 
-        {/* Галочки для включения/отключения пиков - позиционируются под каждым пиком */}
+        {/* Checkboxes for enabling/disabling peaks - positioned under each peak */}
         {peaks.length > 0 && onPeakToggle && (
           <div className="relative h-8 mt-2">
             {peaks.map((peakTime, index) => {

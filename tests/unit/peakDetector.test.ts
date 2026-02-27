@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services/peakDetector';
 
 /**
- * Создаёт синтетические аудиоданные с пиками разной амплитуды
- * @param peakTimes - времена пиков в секундах
- * @param sampleRate - частота дискретизации
- * @param duration - длительность в секундах
- * @param peakAmplitudes - амплитуды пиков (0-1), если не указано - используется peakAmplitude
+ * Creates synthetic audio data with peaks of different amplitudes
+ * @param peakTimes - peak times in seconds
+ * @param sampleRate - sample rate
+ * @param duration - duration in seconds
+ * @param peakAmplitudes - peak amplitudes (0-1), if not specified uses peakAmplitude
  */
 function createSyntheticAudioData(
   peakTimes: number[],
@@ -18,16 +18,16 @@ function createSyntheticAudioData(
   const totalSamples = Math.floor(sampleRate * duration);
   const data = new Float32Array(totalSamples);
   
-  // Заполняем шумом
+  // Fill with noise
   for (let i = 0; i < totalSamples; i++) {
-    data[i] = (Math.random() - 0.5) * 0.05; // Низкий уровень шума
+    data[i] = (Math.random() - 0.5) * 0.05; // Low noise level
   }
   
-  // Добавляем пики
+  // Add peaks
   peakTimes.forEach((time, idx) => {
     const peakIndex = Math.floor(time * sampleRate);
     const amplitude = peakAmplitudes?.[idx] ?? peakAmplitude;
-    // Создаём резкий пик с затуханием
+    // Create sharp peak with decay
     for (let i = 0; i < 100; i++) {
       const index = peakIndex + i;
       if (index < totalSamples) {
@@ -40,19 +40,19 @@ function createSyntheticAudioData(
 }
 
 describe('PeakDetector', () => {
-  describe('detectPeaks с синтетическими данными', () => {
-    it('должен найти 4 пика с одинаковой амплитудой', () => {
+  describe('detectPeaks with synthetic data', () => {
+    it('should find 4 peaks with same amplitude', () => {
       const channelData = createSyntheticAudioData([0.5, 1.2, 2.0, 3.5], 44100, 5, 0.9);
       const sampleRate = 44100;
       
-      // Низкий порог для нахождения всех пиков
+      // Low threshold to find all peaks
       const peaks = detectPeaks(channelData, sampleRate, { threshold: 0.3, minDistance: 0.1 });
       
       expect(peaks.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('должен фильтровать пики с разной амплитудой по threshold', () => {
-      // Создаём пики с разной амплитудой: 1.0, 0.7, 0.4, 0.2
+    it('should filter peaks with different amplitudes by threshold', () => {
+      // Create peaks with different amplitudes: 1.0, 0.7, 0.4, 0.2
       const channelData = createSyntheticAudioData(
         [0.5, 1.5, 2.5, 3.5],
         44100,
@@ -62,22 +62,21 @@ describe('PeakDetector', () => {
       );
       const sampleRate = 44100;
       
-      // Низкий порог (0.1) - находит все пики
+      // Low threshold (0.1) - finds all peaks
       const lowThreshold = detectPeaks(channelData, sampleRate, { threshold: 0.1, minDistance: 0.1 });
       expect(lowThreshold.length).toBe(4);
       
-      // Порог по умолчанию (0.5) - находит пики с амплитудой > 50% от максимума
-      // maxAmplitude ~= 1.0, normalizedThreshold ~= 0.5
-      // Пики: 1.0 > 0.5 ✓, 0.7 > 0.5 ✓, 0.4 < 0.5 ✗, 0.2 < 0.5 ✗
+      // Default threshold (0.5) - finds peaks with amplitude > 50% of max
+      // Peaks: 1.0 > 0.5 ✓, 0.7 > 0.5 ✓, 0.4 < 0.5 ✗, 0.2 < 0.5 ✗
       const defaultThreshold = detectPeaks(channelData, sampleRate, { minDistance: 0.1 });
       expect(defaultThreshold.length).toBe(2);
       
-      // Высокий порог (0.8) - находит только самый громкий пик
+      // High threshold (0.8) - finds only loudest peak
       const highThreshold = detectPeaks(channelData, sampleRate, { threshold: 0.8, minDistance: 0.1 });
       expect(highThreshold.length).toBe(1);
     });
 
-    it('должен найти 2 пика', () => {
+    it('should find 2 peaks', () => {
       const channelData = createSyntheticAudioData([1.0, 2.5]);
       const sampleRate = 44100;
       
@@ -86,24 +85,24 @@ describe('PeakDetector', () => {
       expect(peaks.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('должен фильтровать пики по minDistance', () => {
+    it('should filter peaks by minDistance', () => {
       const channelData = createSyntheticAudioData([1.0, 1.05, 2.0]);
       const sampleRate = 44100;
       
       const peaks = detectPeaks(channelData, sampleRate, { threshold: 0.3, minDistance: 0.1 });
       
-      // Пики на 1.0 и 1.05 должны слиться в один
+      // Peaks at 1.0 and 1.05 should merge into one
       expect(peaks.length).toBeLessThanOrEqual(2);
     });
   });
 
   describe('calculateIntervals', () => {
-    it('должен возвращать пустой массив для 0 или 1 пика', () => {
+    it('should return empty array for 0 or 1 peak', () => {
       expect(calculateIntervals([])).toEqual([]);
       expect(calculateIntervals([{ time: 1, amplitude: 0.5 }])).toEqual([]);
     });
 
-    it('должен вычислять интервалы между пиками', () => {
+    it('should calculate intervals between peaks', () => {
       const peaks = [
         { time: 0.5, amplitude: 0.8 },
         { time: 1.2, amplitude: 0.7 },
@@ -117,7 +116,7 @@ describe('PeakDetector', () => {
   });
 
   describe('calculateStatistics', () => {
-    it('должен возвращать нули для пустого массива интервалов', () => {
+    it('should return zeros for empty intervals array', () => {
       const stats = calculateStatistics([]);
       
       expect(stats).toEqual({
@@ -129,7 +128,7 @@ describe('PeakDetector', () => {
       });
     });
 
-    it('должен вычислять статистику интервалов', () => {
+    it('should calculate interval statistics', () => {
       const intervals = [0.5, 0.5, 0.5];
       
       const stats = calculateStatistics(intervals);
@@ -141,7 +140,7 @@ describe('PeakDetector', () => {
       expect(stats.bounceCount).toBe(4);
     });
 
-    it('должен вычислять стандартное отклонение', () => {
+    it('should calculate standard deviation', () => {
       const intervals = [0.4, 0.5, 0.6];
       
       const stats = calculateStatistics(intervals);

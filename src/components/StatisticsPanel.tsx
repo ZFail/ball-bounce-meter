@@ -14,12 +14,12 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Статистика
+            Statistics
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center">
-            Нет данных для отображения
+            No data to display
           </p>
         </CardContent>
       </Card>
@@ -31,27 +31,27 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" data-testid="statistics-title">
           <BarChart3 className="h-5 w-5" />
-          Статистика
+          Statistics
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
-          {/* Основные показатели */}
+          {/* Main Stats */}
           <div className="grid grid-cols-3 gap-4">
             <StatCard
-              label="Ударов"
+              label="Bounces"
               value={statistics.bounceCount.toString()}
               dataTestId="bounce-count"
             />
             <StatCard
-              label="1-й интервал (сек)"
+              label="1st Interval (sec)"
               value={intervals.length > 0 ? intervals[0].toFixed(3) : '0'}
               dataTestId="first-interval"
             />
             <StatCard
-              label="1-я высота (м)"
+              label="1st Height (m)"
               value={intervals.length > 0 ? ((9.8 * intervals[0] * intervals[0]) / 8).toFixed(2) : '0'}
               dataTestId="first-height"
             />
@@ -60,14 +60,14 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
 
         {intervals.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium mb-2">Интервалы между ударами</h4>
+            <h4 className="text-sm font-medium mb-2">Bounce Intervals</h4>
             <div className="max-h-48 overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
-                    <TableHead>Время (сек)</TableHead>
-                    <TableHead>Высота (м)</TableHead>
+                    <TableHead>Time (sec)</TableHead>
+                    <TableHead>Height (m)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

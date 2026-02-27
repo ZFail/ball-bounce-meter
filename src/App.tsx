@@ -11,7 +11,7 @@ import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services
 import { generateId, saveAnalysisResult } from '@/services/storage';
 
 function App() {
-  // Читаем threshold из URL параметра или используем значение по умолчанию 0.2
+  // Read threshold from URL param or use default 0.2
   const getInitialThreshold = () => {
     const params = new URLSearchParams(window.location.search);
     const thresholdParam = params.get('threshold');
@@ -25,7 +25,7 @@ function App() {
   const [minDistance, setMinDistance] = useState(0.1);
   const [enabledPeaks, setEnabledPeaks] = useState<boolean[]>([]);
   
-  // Состояние для записи с микрофона
+  // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -36,7 +36,7 @@ function App() {
     setCurrentResult(result);
     setAudioBuffer(result.audioBuffer);
     setChannelData(getChannelData(result.audioBuffer, 0));
-    // Все пики включены по умолчанию
+    // Enable all peaks by default
     setEnabledPeaks(new Array(result.peaks.length).fill(true));
   }, []);
 
@@ -48,7 +48,7 @@ function App() {
     });
   }, []);
 
-  // Обработка файла (из drag-and-drop или кнопки)
+  // File handling (from drag-and-drop or button)
   const handleFileSelect = useCallback(async (file: File) => {
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -76,8 +76,8 @@ function App() {
       };
 
       const { audioBuffer: _, ...result } = resultWithBuffer;
-      
-      // Сохраняем в историю только если есть интервалы (минимум 2 пика)
+
+      // Save to history only if there are intervals (at least 2 peaks)
       if (intervals.length > 0) {
         saveAnalysisResult(result);
       }
@@ -88,9 +88,9 @@ function App() {
     }
   }, [threshold, minDistance, handleAnalysisComplete]);
 
-  // Запись с микрофона
+  // Microphone recording
   const handleStartRecording = useCallback(async () => {
-    // Очищаем предыдущую запись при начале новой
+    // Clear previous recording when starting new one
     setRecordedBlob(null);
     
     try {
@@ -105,7 +105,7 @@ function App() {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         setRecordedBlob(blob);
         
-        // Обрабатываем аудио для визуализации
+        // Process audio for visualization
         try {
           const arrayBuffer = await blob.arrayBuffer();
           const audioBuffer = await decodeAudioData(arrayBuffer);
@@ -129,7 +129,7 @@ function App() {
 
           const { audioBuffer: _, ...result } = resultWithBuffer;
 
-          // Сохраняем в историю только если есть интервалы (минимум 2 пика)
+          // Save to history only if there are intervals (at least 2 peaks)
           if (intervals.length > 0) {
             saveAnalysisResult(result);
           }
@@ -166,20 +166,20 @@ function App() {
       const timer = (mediaRecorderRef.current as any).timer;
       if (timer) clearInterval(timer);
     }
-    // Не очищаем recordedBlob здесь - он очистится при начале новой записи
+    // Don't clear recordedBlob here - it will be cleared when starting new recording
   }, []);
 
-  // Очистка Blob URL при размонтировании компонента
+  // Cleanup Blob URL on unmount
   useEffect(() => {
     return () => {
       if (recordedBlob) {
-        // Браузер сам очистит blob URL при размонтировании
-        // Явная очистка не требуется
+        // Browser will clean up blob URL on unmount
+        // Explicit cleanup not required
       }
     };
   }, []);
 
-  // Пересчитываем пики при изменении threshold/minDistance
+  // Recalculate peaks when threshold/minDistance changes
   useEffect(() => {
     if (!channelData || !audioBuffer) return;
 
@@ -193,7 +193,7 @@ function App() {
     const peaksChanged = JSON.stringify(peaks.map(p => p.time)) !== JSON.stringify(currentResult?.peaks || []);
     if (!peaksChanged) return;
 
-    // Сбрасываем enabledPeaks для новых пиков
+    // Reset enabledPeaks for new peaks
     setEnabledPeaks(new Array(peaks.length).fill(true));
 
     setCurrentResult({
@@ -206,15 +206,15 @@ function App() {
     });
   }, [threshold, minDistance, channelData, audioBuffer]);
 
-  // Пересчитываем статистику при изменении enabledPeaks
+  // Recalculate statistics when enabledPeaks changes
   useEffect(() => {
     if (!currentResult || !enabledPeaks.length) return;
 
-    // Фильтруем пики по enabledPeaks
+    // Filter peaks by enabledPeaks
     const filteredPeaks = currentResult.peaks.filter((_, index) => enabledPeaks[index]);
 
     if (filteredPeaks.length < 2) {
-      // Недостаточно пиков для статистики
+      // Not enough peaks for statistics
       setCurrentResult({
         ...currentResult,
         intervals: [],
@@ -229,13 +229,13 @@ function App() {
       return;
     }
 
-    // Вычисляем интервалы между включёнными пиками
+    // Calculate intervals between enabled peaks
     const intervals: number[] = [];
     for (let i = 1; i < filteredPeaks.length; i++) {
       intervals.push(filteredPeaks[i] - filteredPeaks[i - 1]);
     }
 
-    // Вычисляем статистику
+    // Calculate statistics
     const sum = intervals.reduce((a, b) => a + b, 0);
     const average = sum / intervals.length;
     const min = Math.min(...intervals);
@@ -244,9 +244,9 @@ function App() {
     const variance = squaredDiffs.reduce((a, b) => a + b, 0) / intervals.length;
     const stdDev = Math.sqrt(variance);
 
-    // Расчёт высоты подлета мяча
-    // Формула: h = g × t² / 8, где t — время между ударами
-    // g = 9.8 м/с² (ускорение свободного падения)
+    // Calculate bounce height
+    // Formula: h = g × t² / 8, where t is time interval between bounces
+    // g = 9.8 m/s² (gravity)
     const calculateHeight = (t: number) => (9.8 * t * t) / 8;
     const heights = intervals.map(calculateHeight);
     const averageHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
@@ -271,11 +271,11 @@ function App() {
         <header className="text-center space-y-2">
           <h1 className="text-4xl font-bold">Ball Bounce Meter</h1>
           <p className="text-muted-foreground">
-            Анализ звука ударов мяча об пол
+            Audio analysis of ball bounces
           </p>
         </header>
 
-        {/* Кнопки управления */}
+        {/* Control Buttons */}
         <div className="flex justify-center gap-4 flex-wrap">
           <Button
             onClick={isRecording ? handleStopRecording : handleStartRecording}
@@ -285,23 +285,23 @@ function App() {
             {isRecording ? (
               <>
                 <Square className="h-4 w-4" />
-                Остановить запись
+                Stop Recording
               </>
             ) : (
               <>
                 <Mic className="h-4 w-4" />
-                Запись с микрофона
+                Record from Mic
               </>
             )}
           </Button>
 
-          {/* Кнопка скачивания записи */}
+          {/* Download Recording Button */}
           {recordedBlob && (
             <Button
               asChild
               variant="ghost"
               size="icon"
-              title="Скачать запись"
+              title="Download Recording"
             >
               <a
                 href={URL.createObjectURL(recordedBlob)}
@@ -325,13 +325,13 @@ function App() {
             className="gap-2"
           >
             <Upload className="h-4 w-4" />
-            Выбрать файл
+            Select File
           </Button>
         </div>
 
         {isRecording && (
           <div className="text-center text-sm text-muted-foreground">
-            Запись: {recordingTime.toFixed(1)} сек
+            Recording: {recordingTime.toFixed(1)} sec
           </div>
         )}
 

@@ -6,7 +6,7 @@ import { AnalysisResult } from '@/types/audio';
 import { getAnalysisHistory, deleteAnalysisResult, clearAnalysisHistory } from '@/services/storage';
 import { useState, useEffect } from 'react';
 
-// Кастомное событие для обновления истории
+// Custom event for history update
 const HISTORY_UPDATE_EVENT = 'history-update';
 
 export function HistoryPanel() {
@@ -19,7 +19,7 @@ export function HistoryPanel() {
   useEffect(() => {
     loadHistory();
     
-    // Подписываемся на событие обновления истории
+    // Subscribe to history update event
     const handleUpdate = () => loadHistory();
     window.addEventListener(HISTORY_UPDATE_EVENT, handleUpdate);
     
@@ -49,9 +49,9 @@ export function HistoryPanel() {
 
   const getSourceLabel = (sourceType: string) => {
     switch (sourceType) {
-      case 'mic': return 'Микрофон';
+      case 'mic': return 'Microphone';
       case 'webm': return 'WebM';
-      case 'file': return 'Файл';
+      case 'file': return 'File';
       default: return sourceType;
     }
   };
@@ -62,12 +62,12 @@ export function HistoryPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2" data-testid="history-title">
             <History className="h-5 w-5" />
-            История
+            History
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center">
-            История пуста
+            History is empty
           </p>
         </CardContent>
       </Card>
@@ -80,16 +80,16 @@ export function HistoryPanel() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2" data-testid="history-title">
             <History className="h-5 w-5" />
-            История
+            History
           </CardTitle>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleClearAll}
             className="gap-2"
           >
             <Trash2 className="h-4 w-4" />
-            Очистить
+            Clear
           </Button>
         </div>
       </CardHeader>
@@ -98,10 +98,10 @@ export function HistoryPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Дата</TableHead>
-                <TableHead>Источник</TableHead>
-                <TableHead>1-й интервал (сек)</TableHead>
-                <TableHead>1-я высота (м)</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>1st Interval (sec)</TableHead>
+                <TableHead>1st Height (m)</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>

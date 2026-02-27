@@ -20,16 +20,16 @@ export function SensitivityControl({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
-          Настройки детекции
+          Detection Settings
         </CardTitle>
         <CardDescription>
-          Настройте чувствительность для лучшего распознавания ударов
+          Adjust sensitivity for better bounce detection
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-3">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Чувствительность (порог)</label>
+            <label className="text-sm font-medium">Sensitivity (Threshold)</label>
             <span className="text-sm text-muted-foreground">{threshold.toFixed(2)}</span>
           </div>
           <Slider
@@ -41,13 +41,13 @@ export function SensitivityControl({
             data-testid="threshold-slider"
           />
           <p className="text-xs text-muted-foreground">
-            Меньшее значение = выше чувствительность (больше пиков)
+            Lower value = higher sensitivity (more peaks)
           </p>
         </div>
 
         <div className="space-y-3">
           <div className="flex justify-between">
-            <label className="text-sm font-medium">Мин. расстояние между ударами (сек)</label>
+            <label className="text-sm font-medium">Min Distance Between Bounces (sec)</label>
             <span className="text-sm text-muted-foreground">{minDistance.toFixed(2)}</span>
           </div>
           <Slider
@@ -59,7 +59,7 @@ export function SensitivityControl({
             data-testid="min-distance-slider"
           />
           <p className="text-xs text-muted-foreground">
-            Минимальное время между соседними ударами
+            Minimum time between adjacent bounces
           </p>
         </div>
       </CardContent>

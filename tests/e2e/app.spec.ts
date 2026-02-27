@@ -1,42 +1,39 @@
 import { test, expect } from '@playwright/test';
 
-test('загрузка главной страницы', async ({ page }) => {
+test('loads main page', async ({ page }) => {
   await page.goto('/');
 
-  // Проверяем заголовок
+  // Check header
   await expect(page).toHaveTitle(/Ball Bounce Meter/);
-
-  // Проверяем основной заголовок
   await expect(page.getByRole('heading', { name: 'Ball Bounce Meter' })).toBeVisible();
 });
 
-test('отображение кнопок управления', async ({ page }) => {
+test('displays control buttons', async ({ page }) => {
   await page.goto('/');
 
-  // Проверяем наличие кнопок
-  await expect(page.getByRole('button', { name: 'Запись с микрофона' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Выбрать файл' })).toBeVisible();
+  // Check buttons
+  await expect(page.getByRole('button', { name: 'Record from Mic' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Select File' })).toBeVisible();
 });
 
-test('отображение настроек детекции', async ({ page }) => {
+test('displays detection settings', async ({ page }) => {
   await page.goto('/');
 
-  // Проверяем наличие слайдеров настроек
-  await expect(page.getByText('Чувствительность (порог)')).toBeVisible();
-  await expect(page.getByText('Мин. расстояние между ударами')).toBeVisible();
+  // Check settings sliders
+  await expect(page.getByText('Sensitivity (Threshold)')).toBeVisible();
+  await expect(page.getByText('Min Distance Between Bounces')).toBeVisible();
 });
 
-test('отображение панели статистики', async ({ page }) => {
+test('displays statistics panel', async ({ page }) => {
   await page.goto('/');
 
-  // Проверяем наличие панели статистики
-  await expect(page.getByText('Статистика')).toBeVisible();
-  await expect(page.getByText('Нет данных для отображения')).toBeVisible();
+  // Check statistics panel - "No data to display" is unique to empty statistics
+  await expect(page.getByText('No data to display')).toBeVisible();
 });
 
-test('отображение панели истории', async ({ page }) => {
+test('displays history panel', async ({ page }) => {
   await page.goto('/');
 
-  // Проверяем наличие панели истории (заголовок)
+  // Check history panel title
   await expect(page.getByTestId('history-title')).toBeVisible();
 });

@@ -11,7 +11,7 @@ export interface AnalysisResult {
     max: number;
     stdDev: number;
     bounceCount: number;
-    averageHeight?: number;  // Средняя высота подлета (метры)
+    averageHeight?: number;  // Average bounce height (meters)
   };
 }
 

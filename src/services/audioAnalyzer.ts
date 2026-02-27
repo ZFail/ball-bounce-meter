@@ -1,11 +1,11 @@
 import { AudioData } from '@/types/audio';
 
 /**
- * Записывает аудио с микрофона
+ * Records audio from microphone
  */
 export async function recordFromMicrophone(): Promise<AudioData> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  
+
   return new Promise((resolve) => {
     const mediaRecorder = new MediaRecorder(stream);
     const chunks: Blob[] = [];
@@ -15,10 +15,10 @@ export async function recordFromMicrophone(): Promise<AudioData> {
       const blob = new Blob(chunks, { type: 'audio/webm' });
       const arrayBuffer = await blob.arrayBuffer();
       const audioBuffer = await decodeAudioData(arrayBuffer);
-      
-      // Останавливаем все треки
+
+      // Stop all tracks
       stream.getTracks().forEach(track => track.stop());
-      
+
       resolve({
         audioBuffer,
         sourceType: 'mic',
@@ -26,14 +26,14 @@ export async function recordFromMicrophone(): Promise<AudioData> {
     };
 
     mediaRecorder.start();
-    
-    // Возвращаем функцию для остановки записи
+
+    // Return function to stop recording
     (mediaRecorder as any).stopRecording = () => mediaRecorder.stop();
   });
 }
 
 /**
- * Декодирует аудио данные в AudioBuffer
+ * Decodes audio data to AudioBuffer
  */
 export async function decodeAudioData(arrayBuffer: ArrayBuffer): Promise<AudioBuffer> {
   const audioContext = new AudioContext();
@@ -41,16 +41,16 @@ export async function decodeAudioData(arrayBuffer: ArrayBuffer): Promise<AudioBu
 }
 
 /**
- * Загружает аудио из файла
+ * Loads audio from file
  */
 export async function loadAudioFile(file: File): Promise<AudioData> {
   const arrayBuffer = await file.arrayBuffer();
   const audioBuffer = await decodeAudioData(arrayBuffer);
-  
-  const sourceType: 'file' | 'webm' = file.name.toLowerCase().endsWith('.webm') 
-    ? 'webm' 
+
+  const sourceType: 'file' | 'webm' = file.name.toLowerCase().endsWith('.webm')
+    ? 'webm'
     : 'file';
-  
+
   return {
     audioBuffer,
     sourceType,
@@ -59,14 +59,14 @@ export async function loadAudioFile(file: File): Promise<AudioData> {
 }
 
 /**
- * Получает сырые аудиоданные (PCM) из AudioBuffer
+ * Gets raw PCM audio data from AudioBuffer
  */
 export function getChannelData(audioBuffer: AudioBuffer, channel: number = 0): Float32Array {
   return audioBuffer.getChannelData(channel);
 }
 
 /**
- * Получает информацию об аудио
+ * Gets audio information
  */
 export function getAudioInfo(audioBuffer: AudioBuffer) {
   return {
