@@ -7,10 +7,9 @@ import { getAnalysisHistory, deleteAnalysisResult, clearAnalysisHistory } from '
 import { useState, useEffect } from 'react';
 
 interface HistoryPanelProps {
-  onSelectResult: (result: AnalysisResult) => void;
 }
 
-export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
+export function HistoryPanel({ }: HistoryPanelProps) {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
 
   useEffect(() => {
@@ -111,13 +110,6 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
                     <TableCell>{firstHeight.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onSelectResult(result)}
-                        >
-                          Показать
-                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"

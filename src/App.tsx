@@ -39,13 +39,6 @@ function App() {
     setEnabledPeaks(new Array(result.peaks.length).fill(true));
   }, []);
 
-  const handleSelectHistoryResult = useCallback((result: AnalysisResult) => {
-    setCurrentResult(result);
-    setAudioBuffer(null);
-    setChannelData(null);
-    setEnabledPeaks(new Array(result.peaks.length).fill(true));
-  }, []);
-
   const handlePeakToggle = useCallback((index: number, enabled: boolean) => {
     setEnabledPeaks(prev => {
       const next = [...prev];
@@ -320,7 +313,7 @@ function App() {
             <StatisticsPanel result={currentResult} />
           </div>
           <div className="md:col-span-2">
-            <HistoryPanel onSelectResult={handleSelectHistoryResult} />
+            <HistoryPanel />
           </div>
         </div>
       </div>
