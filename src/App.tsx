@@ -11,11 +11,11 @@ import { detectPeaks, calculateIntervals, calculateStatistics } from '@/services
 import { generateId, saveAnalysisResult } from '@/services/storage';
 
 function App() {
-  // Читаем threshold из URL параметра или используем значение по умолчанию 0.5
+  // Читаем threshold из URL параметра или используем значение по умолчанию 0.2
   const getInitialThreshold = () => {
     const params = new URLSearchParams(window.location.search);
     const thresholdParam = params.get('threshold');
-    return thresholdParam ? parseFloat(thresholdParam) : 0.5;
+    return thresholdParam ? parseFloat(thresholdParam) : 0.2;
   };
 
   const [currentResult, setCurrentResult] = useState<AnalysisResult | null>(null);

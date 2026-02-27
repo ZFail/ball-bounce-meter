@@ -75,8 +75,8 @@ test.describe('Анализ аудио файлов', () => {
 
   test('изменение порога должно пересчитывать пики для sound_test1.webm', async ({ page }) => {
     // sound_test1.webm имеет 4 пика с относительными амплитудами: 32%, 72%, 75%, 100%
-    // При threshold=0.5 (50%) первый пик (32%) отсекается → 3 пика
-    // При уменьшении порога все пики проходят → 4 пика
+    // При threshold=0.2 (20%) все пики проходят → 4 пика
+    // При увеличении порога до 0.5 первый пик (32%) отсекается → 3 пика
 
     await page.goto('http://localhost:5173');
 
@@ -90,21 +90,22 @@ test.describe('Анализ аудио файлов', () => {
     const bounceCountElement = page.getByTestId('bounce-count');
     await expect(bounceCountElement).toBeVisible({ timeout: 10000 });
 
-    // Проверяем начальное количество пиков (должно быть 3 при threshold=0.5)
+    // Проверяем начальное количество пиков (должно быть 4 при threshold=0.2)
     let bounceCountText = await bounceCountElement.textContent();
     let bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
-    expect(bounceCount).toBe(3);
+    expect(bounceCount).toBe(4);
 
-    // Кликаем на thumb слайдера для уменьшения порога
-    const sliderThumb = page.getByTestId('threshold-slider').locator('span').nth(1);
-    await sliderThumb.click({ force: true });
+    // page.locator('span').nth(5) = корневой элемент слайдера с data-testid="threshold-slider"
+    // page.locator('span').nth(6) = track слайдера (getByTestId('threshold-slider').locator('span').nth(0))
+    // Кликаем на track слайдера для увеличения порога
+    await page.getByTestId('threshold-slider').locator('span').nth(0).click();
 
     // Ждём пересчёта
     await page.waitForTimeout(500);
 
-    // Проверяем что количество пиков изменилось на 4
+    // Проверяем что количество пиков уменьшилось до 3
     bounceCountText = await bounceCountElement.textContent();
     bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
-    expect(bounceCount).toBe(4);
+    expect(bounceCount).toBe(3);
   });
 });

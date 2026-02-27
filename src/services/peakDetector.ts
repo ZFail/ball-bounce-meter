@@ -26,7 +26,7 @@ export function detectPeaks(
   options: PeakDetectionOptions = {}
 ): PeakResult[] {
   const {
-    threshold = 0.5,
+    threshold = 0.2,
     minDistance = 0.1,
   } = options;
 
