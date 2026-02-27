@@ -89,45 +89,47 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
               <TableRow>
                 <TableHead>Дата</TableHead>
                 <TableHead>Источник</TableHead>
-                <TableHead>Ударов</TableHead>
-                <TableHead>Средний (сек)</TableHead>
-                <TableHead>Высота (м)</TableHead>
+                <TableHead>1-й интервал (сек)</TableHead>
+                <TableHead>1-я высота (м)</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {history.map((result) => (
-                <TableRow key={result.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      {formatDateTime(result.timestamp)}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getSourceLabel(result.sourceType)}</TableCell>
-                  <TableCell>{result.statistics.bounceCount}</TableCell>
-                  <TableCell>{result.statistics.average.toFixed(3)}</TableCell>
-                  <TableCell>{result.statistics.averageHeight?.toFixed(2) || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onSelectResult(result)}
-                      >
-                        Показать
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(result.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {history.map((result) => {
+                const firstInterval = result.intervals[0] || 0;
+                const firstHeight = result.intervals[0] ? (9.8 * result.intervals[0] * result.intervals[0]) / 8 : 0;
+                return (
+                  <TableRow key={result.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        {formatDateTime(result.timestamp)}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getSourceLabel(result.sourceType)}</TableCell>
+                    <TableCell>{firstInterval.toFixed(3)}</TableCell>
+                    <TableCell>{firstHeight.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onSelectResult(result)}
+                        >
+                          Показать
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(result.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
