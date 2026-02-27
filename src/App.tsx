@@ -224,6 +224,13 @@ function App() {
     const variance = squaredDiffs.reduce((a, b) => a + b, 0) / intervals.length;
     const stdDev = Math.sqrt(variance);
 
+    // Расчёт высоты подлета мяча
+    // Формула: h = g × t² / 8, где t — время между ударами
+    // g = 9.8 м/с² (ускорение свободного падения)
+    const calculateHeight = (t: number) => (9.8 * t * t) / 8;
+    const heights = intervals.map(calculateHeight);
+    const averageHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
+
     setCurrentResult({
       ...currentResult,
       intervals,
@@ -233,6 +240,7 @@ function App() {
         max,
         stdDev,
         bounceCount: filteredPeaks.length,
+        averageHeight,
       },
     });
   }, [enabledPeaks]);

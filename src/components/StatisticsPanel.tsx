@@ -37,32 +37,46 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard
-            label="Ударов"
-            value={statistics.bounceCount.toString()}
-            dataTestId="bounce-count"
-          />
-          <StatCard
-            label="Средний (сек)"
-            value={statistics.average.toFixed(3)}
-            dataTestId="average-interval"
-          />
-          <StatCard
-            label="Мин (сек)"
-            value={statistics.min.toFixed(3)}
-            dataTestId="min-interval"
-          />
-          <StatCard
-            label="Макс (сек)"
-            value={statistics.max.toFixed(3)}
-            dataTestId="max-interval"
-          />
-          <StatCard
-            label="Отклонение"
-            value={statistics.stdDev.toFixed(3)}
-            dataTestId="std-dev"
-          />
+        <div className="space-y-4">
+          {/* Интервалы */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <StatCard
+              label="Ударов"
+              value={statistics.bounceCount.toString()}
+              dataTestId="bounce-count"
+            />
+            <StatCard
+              label="Средний (сек)"
+              value={statistics.average.toFixed(3)}
+              dataTestId="average-interval"
+            />
+            <StatCard
+              label="Мин (сек)"
+              value={statistics.min.toFixed(3)}
+              dataTestId="min-interval"
+            />
+            <StatCard
+              label="Макс (сек)"
+              value={statistics.max.toFixed(3)}
+              dataTestId="max-interval"
+            />
+            <StatCard
+              label="Отклонение"
+              value={statistics.stdDev.toFixed(3)}
+              dataTestId="std-dev"
+            />
+          </div>
+
+          {/* Высота подлета - только средняя */}
+          {statistics.averageHeight !== undefined && (
+            <div className="grid grid-cols-1 gap-4">
+              <StatCard
+                label="Высота подлета (м)"
+                value={statistics.averageHeight.toFixed(2)}
+                dataTestId="average-height"
+              />
+            </div>
+          )}
         </div>
 
         {intervals.length > 0 && (
@@ -74,15 +88,20 @@ export function StatisticsPanel({ result }: StatisticsPanelProps) {
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
                     <TableHead>Время (сек)</TableHead>
+                    <TableHead>Высота (м)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {intervals.map((interval: number, index: number) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{interval.toFixed(3)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {intervals.map((interval: number, index: number) => {
+                    const height = (9.8 * interval * interval) / 8;
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>{interval.toFixed(3)}</TableCell>
+                        <TableCell>{height.toFixed(2)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

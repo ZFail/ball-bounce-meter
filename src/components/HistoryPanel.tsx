@@ -91,6 +91,7 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
                 <TableHead>Источник</TableHead>
                 <TableHead>Ударов</TableHead>
                 <TableHead>Средний (сек)</TableHead>
+                <TableHead>Высота (м)</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -106,17 +107,18 @@ export function HistoryPanel({ onSelectResult }: HistoryPanelProps) {
                   <TableCell>{getSourceLabel(result.sourceType)}</TableCell>
                   <TableCell>{result.statistics.bounceCount}</TableCell>
                   <TableCell>{result.statistics.average.toFixed(3)}</TableCell>
+                  <TableCell>{result.statistics.averageHeight?.toFixed(2) || '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => onSelectResult(result)}
                       >
                         Показать
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(result.id)}
                       >

@@ -133,13 +133,21 @@ export function calculateStatistics(intervals: number[]) {
   const average = sum / intervals.length;
   const min = Math.min(...intervals);
   const max = Math.max(...intervals);
-  
+
   // Стандартное отклонение
-  const squaredDiffs = intervals.map(interval => 
+  const squaredDiffs = intervals.map(interval =>
     Math.pow(interval - average, 2)
   );
   const variance = squaredDiffs.reduce((a, b) => a + b, 0) / intervals.length;
   const stdDev = Math.sqrt(variance);
+
+  // Расчёт высоты подлета мяча
+  // Формула: h = g × t² / 8, где t — время между ударами
+  // g = 9.8 м/с² (ускорение свободного падения)
+  const calculateHeight = (t: number) => (9.8 * t * t) / 8;
+  
+  const heights = intervals.map(calculateHeight);
+  const averageHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
 
   return {
     average,
@@ -147,6 +155,7 @@ export function calculateStatistics(intervals: number[]) {
     max,
     stdDev,
     bounceCount: intervals.length + 1,
+    averageHeight,
   };
 }
 
