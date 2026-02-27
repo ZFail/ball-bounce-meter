@@ -75,7 +75,12 @@ function App() {
       };
 
       const { audioBuffer: _, ...result } = resultWithBuffer;
-      saveAnalysisResult(result);
+      
+      // Сохраняем в историю только если есть интервалы (минимум 2 пика)
+      if (intervals.length > 0) {
+        saveAnalysisResult(result);
+      }
+      
       handleAnalysisComplete(resultWithBuffer);
     } catch (error) {
       console.error('Error processing file:', error);
@@ -117,7 +122,12 @@ function App() {
           };
 
           const { audioBuffer: _, ...result } = resultWithBuffer;
-          saveAnalysisResult(result);
+          
+          // Сохраняем в историю только если есть интервалы (минимум 2 пика)
+          if (intervals.length > 0) {
+            saveAnalysisResult(result);
+          }
+          
           handleAnalysisComplete(resultWithBuffer);
         } catch (error) {
           console.error('Error processing audio:', error);
