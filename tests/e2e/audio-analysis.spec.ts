@@ -131,9 +131,6 @@ test.describe('Анализ аудио файлов', () => {
     const downloadLink = page.getByRole('link', { name: 'Скачать запись' });
     await expect(downloadLink).toHaveAttribute('download', /recording-.*\.webm/);
     
-    // Проверяем что размер файла отображается
-    await expect(page.getByText(/KB\)/)).toBeVisible();
-    
     // Проверяем что пики обнаружены (WAV файл содержит 4 пика)
     const bounceCountElement = page.getByTestId('bounce-count');
     await expect(bounceCountElement).toBeVisible({ timeout: 5000 });

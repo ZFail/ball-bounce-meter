@@ -297,24 +297,19 @@ function App() {
 
           {/* Кнопка скачивания записи */}
           {recordedBlob && (
-            <div className="flex items-center gap-2">
-              <Button
-                asChild
-                variant="outline"
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              title="Скачать запись"
+            >
+              <a
+                href={URL.createObjectURL(recordedBlob)}
+                download={`recording-${Date.now()}.webm`}
               >
-                <a
-                  href={URL.createObjectURL(recordedBlob)}
-                  download={`recording-${Date.now()}.webm`}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  Скачать запись
-                </a>
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                ({(recordedBlob.size / 1024).toFixed(1)} KB)
-              </span>
-            </div>
+                <Upload className="h-4 w-4" />
+              </a>
+            </Button>
           )}
 
           <input
