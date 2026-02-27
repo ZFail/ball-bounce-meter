@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -15,7 +19,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--use-fake-device-for-media-stream',
+            '--use-fake-ui-for-media-stream',
+            '--use-file-for-fake-audio-capture=' + path.join(__dirname, 'tests/fixtures/test-mic-input.wav'),
+          ],
+        },
+        permissions: ['microphone'],
+      },
     },
   ],
   webServer: {

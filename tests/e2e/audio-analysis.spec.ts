@@ -108,4 +108,37 @@ test.describe('Анализ аудио файлов', () => {
     bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
     expect(bounceCount).toBe(3);
   });
+
+  test('запись с микрофона и скачивание', async ({ page }) => {
+    await page.goto('http://localhost:5173');
+
+    // Нажимаем "Запись с микрофона"
+    await page.getByRole('button', { name: 'Запись с микрофона' }).click();
+
+    // Ждём начала записи
+    await expect(page.getByRole('button', { name: 'Остановить запись' })).toBeVisible({ timeout: 5000 });
+
+    // Ждём 2.5 секунды для записи (WAV файл 3 секунды, чтобы не зацикливался)
+    await page.waitForTimeout(2500);
+
+    // Нажимаем "Остановить запись"
+    await page.getByRole('button', { name: 'Остановить запись' }).click();
+
+    // Ждём появления кнопки скачивания
+    await expect(page.getByRole('link', { name: 'Скачать запись' })).toBeVisible({ timeout: 10000 });
+
+    // Проверяем что кнопка имеет правильный download атрибут
+    const downloadLink = page.getByRole('link', { name: 'Скачать запись' });
+    await expect(downloadLink).toHaveAttribute('download', /recording-.*\.webm/);
+    
+    // Проверяем что размер файла отображается
+    await expect(page.getByText(/KB\)/)).toBeVisible();
+    
+    // Проверяем что пики обнаружены (WAV файл содержит 4 пика)
+    const bounceCountElement = page.getByTestId('bounce-count');
+    await expect(bounceCountElement).toBeVisible({ timeout: 5000 });
+    const bounceCountText = await bounceCountElement.textContent();
+    const bounceCount = parseInt(bounceCountText?.trim().split('\n')[0] || '0', 10);
+    expect(bounceCount).toBe(4); // WAV файл содержит ровно 4 пика (0.5s, 1.1s, 1.7s, 2.3s)
+  });
 });
